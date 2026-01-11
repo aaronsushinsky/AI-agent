@@ -2,6 +2,7 @@ import os
 import argparse
 from dotenv import load_dotenv
 from google import genai
+from prompts import *
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
