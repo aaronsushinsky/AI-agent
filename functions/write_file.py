@@ -1,9 +1,9 @@
 import os
+from google.genai import types
 
 def write_file(working_directory, file_path, content):
     try:
         
-        contents = ""
         working_dir_abs = os.path.abspath(working_directory)
         target_dir = os.path.normpath(os.path.join(working_dir_abs, file_path))      
         valid_target_dir = os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
@@ -23,3 +23,21 @@ def write_file(working_directory, file_path, content):
     except Exception as e:
         return f'Error: {e}'
 
+schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="Overwrites the existing file with the new content that is passed via the function's argument, content.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="A string representing the relative path of the file."
+                ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="The characters that are to be written to the file."
+                )
+            },
+        required=["file_path", "content"]
+        ),
+    )
