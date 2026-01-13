@@ -35,10 +35,23 @@ def main():
             print("Prompt tokens: ", response.usage_metadata.prompt_token_count)
             print("Response tokens: ", response.usage_metadata.candidates_token_count)
             print("User prompt: ", args.user_prompt)
-            
-        if response.function_calls != None:
+
+        func_result_list =[]
+        verbose = args.verbose    
+        if response.function_calls is not None:
             for function_call in response.function_calls:
-                print(f"Calling function: {function_call.name}({function_call.args})")
+                function_call_result = call_function(function_call, verbose=verbose)
+                
+                if not function_call_result.parts:
+                    raise Exception("Parts list is empty")
+                if function_call_result.parts[0].function_response is None:
+                    raise Exception ("Function response is None")
+                if function_call_result.parts[0].function_response.response is None:
+                    raise Exception ("No function result present")
+                func_result_list.append(function_call_result.parts[0])
+                
+                if args.verbose:
+                    print(f"-> {function_call_result.parts[0].function_response.response}")
         else:
             print(response.text)
 
