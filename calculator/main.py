@@ -1,6 +1,7 @@
 # calculator/main.py
 
 import sys
+import re
 from pkg.calculator import Calculator
 from pkg.render import format_json_output
 
@@ -14,6 +15,9 @@ def main():
         return
 
     expression = " ".join(sys.argv[1:])
+    # Add spaces around operators for correct tokenization
+    expression = re.sub(r'([+\-*/()])', r' \1 ', expression)
+    expression = re.sub(r'\s+', ' ', expression).strip()
     try:
         result = calculator.evaluate(expression)
         if result is not None:
