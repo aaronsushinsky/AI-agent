@@ -21,42 +21,50 @@ def main():
     args = parser.parse_args()
     messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
 
-    response = client.models.generate_content(
-    model='gemini-2.5-flash',
-    contents=messages,
-    config=types.GenerateContentConfig(
-        tools = [available_functions],
-        system_instruction=system_prompt
+    candidate_history = []
+    for i in range(20):
+        response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=messages,
+        config=types.GenerateContentConfig(
+            tools = [available_functions],
+            system_instruction=system_prompt
+            )
         )
-    )
+        if response.candidates:
+            for candidate in response.candidates:
+                messages.append(candidate.content)
 
-    if response.usage_metadata != None:
-        if args.verbose == True:
-            print("Prompt tokens: ", response.usage_metadata.prompt_token_count)
-            print("Response tokens: ", response.usage_metadata.candidates_token_count)
-            print("User prompt: ", args.user_prompt)
+        if response.usage_metadata != None:
+            if args.verbose == True:
+                print("Prompt tokens: ", response.usage_metadata.prompt_token_count)
+                print("Response tokens: ", response.usage_metadata.candidates_token_count)
+                print("User prompt: ", args.user_prompt)
 
-        func_result_list =[]
-        verbose = args.verbose    
-        if response.function_calls is not None:
-            for function_call in response.function_calls:
-                function_call_result = call_function(function_call, verbose=verbose)
-                
-                if not function_call_result.parts:
-                    raise Exception("Parts list is empty")
-                if function_call_result.parts[0].function_response is None:
-                    raise Exception ("Function response is None")
-                if function_call_result.parts[0].function_response.response is None:
-                    raise Exception ("No function result present")
-                func_result_list.append(function_call_result.parts[0])
-                
-                if args.verbose:
-                    print(f"-> {function_call_result.parts[0].function_response.response}")
+            func_result_list =[]
+            verbose = args.verbose    
+            if response.function_calls is not None:
+                for function_call in response.function_calls:
+                    function_call_result = call_function(function_call, verbose=verbose)
+                    
+                    if not function_call_result.parts:
+                        raise Exception("Parts list is empty")
+                    if function_call_result.parts[0].function_response is None:
+                        raise Exception ("Function response is None")
+                    if function_call_result.parts[0].function_response.response is None:
+                        raise Exception ("No function result present")
+                    func_result_list.append(function_call_result.parts[0])
+                    
+                    if args.verbose:
+                        print(f"-> {function_call_result.parts[0].function_response.response}")
+                messages.append(types.Content(role="user", parts=func_result_list))
+            else:
+                print(response.text)
+                return
+
         else:
-            print(response.text)
-
-    else:
-        raise RuntimeError
-
+            raise RuntimeError
+    print("Something went wrong: agent hit max iterations without a final response.")
+    sys.exit(1)
 if __name__ == "__main__":
     main()
